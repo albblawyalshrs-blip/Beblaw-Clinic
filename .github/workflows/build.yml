@@ -107,15 +107,6 @@ jobs:
         rootProject.name = "BeblawClinic"
         include ':app'
         EOF
-        
-        mkdir -p gradle/wrapper
-        cat <<EOF > gradle/wrapper/gradle-wrapper.properties
-        distributionBase=GRADLE_USER_HOME
-        distributionPath=wrapper/dists
-        distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
-        zipStoreBase=GRADLE_USER_HOME
-        zipStorePath=wrapper/dists
-        EOF
 
     - name: Move Firebase file
       run: |
@@ -123,9 +114,10 @@ jobs:
           mv google-services.json app/
         fi
 
-    - name: Grant execute permission for gradlew
+    # إنشاء ملفات البناء الناقصة أوتوماتيكياً
+    - name: Initialize Gradle Wrapper
       run: |
-        wget https://raw.githubusercontent.com/gradle/gradle/master/gradlew
+        gradle wrapper --gradle-version 8.2
         chmod +x gradlew
 
     - name: Build APK
