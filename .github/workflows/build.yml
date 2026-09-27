@@ -18,21 +18,21 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 1. تثبيت أدوات الأندرويد
-    - name: Install Android SDK
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y android-sdk
-
-    # 2. إنشاء هيكل مشروع أندرويد
     - name: Create Android Project
       run: |
         mkdir -p app/src/main/java/com/example/beblawclinic
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
-        
-        cat <<EOF > app/src/main/AndroidManifest.xml
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.beblawclinic">
+
+        cat << 'EOF' > gradle.properties
+        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+        android.useAndroidX=true
+        android.nonTransitiveRClass=true
+        EOF
+
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application android:allowBackup="true" android:label="Beblaw Clinic" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                 <activity android:name=".MainActivity" android:exported="true">
                     <intent-filter>
@@ -44,12 +44,12 @@ jobs:
         </manifest>
         EOF
 
-        cat <<EOF > app/src/main/java/com/example/beblawclinic/MainActivity.kt
+        cat << 'EOF' > app/src/main/java/com/example/beblawclinic/MainActivity.kt
         package com.example.beblawclinic
         import android.os.Bundle
         import androidx.appcompat.app.AppCompatActivity
         import android.widget.TextView
-        
+
         class MainActivity : AppCompatActivity() {
             override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
@@ -61,7 +61,7 @@ jobs:
         }
         EOF
 
-        cat <<EOF > app/build.gradle
+        cat << 'EOF' > app/build.gradle
         plugins {
             id 'com.android.application'
             id 'org.jetbrains.kotlin.android'
@@ -80,11 +80,10 @@ jobs:
         dependencies {
             implementation 'androidx.core:core-ktx:1.12.0'
             implementation 'androidx.appcompat:appcompat:1.6.1'
-            implementation 'com.google.android.material:material:1.11.0'
         }
         EOF
 
-        cat <<EOF > build.gradle
+        cat << 'EOF' > build.gradle
         buildscript {
             repositories {
                 google()
@@ -103,24 +102,16 @@ jobs:
         }
         EOF
 
-        cat <<EOF > settings.gradle
+        cat << 'EOF' > settings.gradle
         rootProject.name = "BeblawClinic"
         include ':app'
         EOF
 
-    - name: Move Firebase file
-      run: |
-        if [ -f google-services.json ]; then
-          mv google-services.json app/
-        fi
-
-    # 3. إعداد الإصدار الحديث من Gradle أوتوماتيكياً
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.2'
 
-    # 4. بناء التطبيق باستخدام الأمر المباشر
     - name: Build APK
       run: gradle assembleDebug
 
@@ -129,3 +120,4 @@ jobs:
       with:
         name: Beblaw-Clinic-App
         path: app/build/outputs/apk/debug/app-debug.apk
+
