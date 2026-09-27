@@ -18,11 +18,118 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+    # 1. تثبيت أدوات الأندرويد
+    - name: Install Android SDK
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y android-sdk
+
+    # 2. إنشاء هيكل مشروع أندرويد
+    - name: Create Android Project
+      run: |
+        mkdir -p app/src/main/java/com/example/beblawclinic
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/values
+        
+        cat <<EOF > app/src/main/AndroidManifest.xml
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.beblawclinic">
+            <application android:allowBackup="true" android:label="Beblaw Clinic" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        cat <<EOF > app/src/main/java/com/example/beblawclinic/MainActivity.kt
+        package com.example.beblawclinic
+        import android.os.Bundle
+        import androidx.appcompat.app.AppCompatActivity
+        import android.widget.TextView
+        
+        class MainActivity : AppCompatActivity() {
+            override fun onCreate(savedInstanceState: Bundle?) {
+                super.onCreate(savedInstanceState)
+                val textView = TextView(this)
+                textView.text = "مرحباً بك في مستوصف ببلاو الخيري! (التطبيق قيد الإنشاء)"
+                textView.textSize = 24f
+                setContentView(textView)
+            }
+        }
+        EOF
+
+        cat <<EOF > app/build.gradle
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+        android {
+            namespace 'com.example.beblawclinic'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.example.beblawclinic"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+        }
+        EOF
+
+        cat <<EOF > build.gradle
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath "com.android.tools.build:gradle:8.2.0"
+                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+
+        cat <<EOF > settings.gradle
+        rootProject.name = "BeblawClinic"
+        include ':app'
+        EOF
+        
+        mkdir -p gradle/wrapper
+        cat <<EOF > gradle/wrapper/gradle-wrapper.properties
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+
+    - name: Move Firebase file
+      run: |
+        if [ -f google-services.json ]; then
+          mv google-services.json app/
+        fi
+
+    - name: Grant execute permission for gradlew
+      run: |
+        wget https://raw.githubusercontent.com/gradle/gradle/master/gradlew
+        chmod +x gradlew
 
     - name: Build APK
-      run: bash ./gradlew assembleDebug || echo "Waiting for Android files"
+      run: ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v3
